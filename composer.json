@@ -1,0 +1,19 @@
+{
+  "name": "extra/extrashippinglabels",
+  "authors": [],
+  "require": {
+    "php": ">=8.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "PrestaShop\\Module\\ExtraShippingLabels\\": "src/"
+    },
+    "classmap": [
+      "classes/"
+    ],
+    "config": {
+      "prepend-autoloader": false
+    },
+    "type": "prestashop-module"
+  }
+}

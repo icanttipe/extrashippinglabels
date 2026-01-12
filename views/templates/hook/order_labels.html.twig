@@ -1,0 +1,62 @@
+<div class="card mt-2">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="material-icons">local_shipping</i>
+            {{ 'Shipping Labels'|trans({}, 'Modules.ExtraShippingLabels.Admin') }}
+        </h3>
+    </div>
+    <div class="card-body">
+        {% if shipping_labels is not empty %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{{ 'Tracking Number'|trans({}, 'Modules.ExtraShippingLabels.Admin') }}</th>
+                        <th>{{ 'Module'|trans({}, 'Modules.ExtraShippingLabels.Admin') }}</th>
+                        <th>{{ 'Date'|trans({}, 'Modules.ExtraShippingLabels.Admin') }}</th>
+                        <th>{{ 'Actions'|trans({}, 'Modules.ExtraShippingLabels.Admin') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for label in shipping_labels %}
+                        <tr>
+                            <td>{{ label.tracking_number|default('N/A') }}</td>
+                            <td>{{ label.module_name }}</td>
+                            <td>{{ label.date_add|date('Y-m-d H:i:s') }}</td>
+                            <td>
+                                {# 
+                                  The actionGetShippingLabelData hook should be used by modules
+                                  to add a 'download_url' or similar to the label array.
+                                #}
+                                {% if label.download_url is defined and label.download_url %}
+                                    <a href="{{ label.download_url }}" class="btn btn-primary btn-sm" target="_blank">
+                                        <i class="material-icons">cloud_download</i>
+                                        {{ 'Download'|trans({}, 'Modules.ExtraShippingLabels.Admin') }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">{{ 'No action available'|trans({}, 'Modules.ExtraShippingLabels.Admin') }}</span>
+                                {% endif %}
+
+                                {# 
+                                  A hook to allow adding more actions.
+                                #}
+                                {{ hook('displayShippingLabelActions', {'id_shipping_label': label.id_shipping_label}) }}
+                                <form action="{{ path('ps_extrashippinglabels_labels_delete', {'shippingLabelId': label.id_shipping_label}) }}" method="post" class="d-inline-block">
+                                    <button type="submit" class="btn btn-danger btn-sm js-confirm-submit"
+                                            data-toggle="pstooltip"
+                                            data-placement="top"
+                                            data-original-title="{{ 'Delete'|trans({}, 'Admin.Actions') }}"
+                                            data-confirm-message="{{ 'Delete selected item?'|trans({}, 'Admin.Notifications.Warning') }}">
+                                        <i class="material-icons">delete</i>
+                                        {{ 'Delete'|trans({}, 'Admin.Actions') }}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>{{ 'No shipping labels found for this order.'|trans({}, 'Modules.ExtraShippingLabels.Admin') }}</p>
+        {% endif %}
+    </div>
+</div>
