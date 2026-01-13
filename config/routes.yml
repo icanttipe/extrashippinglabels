@@ -60,3 +60,21 @@ ps_extrashippinglabels_labels_bulk_delete:
         _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::bulkDeleteAction'
         _legacy_controller: 'AdminShippingLabel'
         _legacy_link: 'AdminShippingLabel'
+
+ps_extrashippinglabels_labels_download:
+    path: /extrashippinglabels/labels/{shippingLabelId}/download
+    methods: [GET]
+    defaults:
+        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::downloadAction'
+        _legacy_controller: 'AdminShippingLabel'
+        _legacy_link: 'AdminShippingLabel'
+    requirements:
+        shippingLabelId: \d+
+
+ps_extrashippinglabels_labels_bulk_print:
+    path: /extrashippinglabels/labels/bulk-print
+    methods: [POST]
+    defaults:
+        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::bulkPrintAction'
+        _legacy_controller: 'AdminShippingLabel'
+        _legacy_link: 'AdminShippingLabel'

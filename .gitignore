@@ -1,4 +1,36 @@
+# Dependencies
 vendor/
 composer.lock
-.idea
-js/node_modules
+node_modules/
+js/node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
+.phpunit.result.cache
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+
+# Labels directory (files are stored in /var/shipping_labels/)
+labels/*
+!labels/.htaccess
+!labels/index.php

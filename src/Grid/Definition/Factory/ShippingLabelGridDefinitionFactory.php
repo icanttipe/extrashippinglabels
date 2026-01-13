@@ -67,6 +67,16 @@ class ShippingLabelGridDefinitionFactory extends AbstractFilterableGridDefinitio
                     ->setOptions([
                         'actions' => (new RowActionCollection())
                             ->add(
+                                (new LinkRowAction('download'))
+                                    ->setName('Download')
+                                    ->setIcon('cloud_download')
+                                    ->setOptions([
+                                        'route' => 'ps_extrashippinglabels_labels_download',
+                                        'route_param_name' => 'shippingLabelId',
+                                        'route_param_field' => 'id_shipping_label',
+                                    ])
+                            )
+                            ->add(
                                 (new LinkRowAction('view_order'))
                                     ->setName('View Order')
                                     ->setIcon('remove_red_eye')
@@ -82,7 +92,7 @@ class ShippingLabelGridDefinitionFactory extends AbstractFilterableGridDefinitio
                                     ->setIcon('delete')
                                     ->setOptions([
                                         'method' => 'POST',
-                                        'route' => 'ps_shippinglabels_labels_delete',
+                                        'route' => 'ps_extrashippinglabels_labels_delete',
                                         'route_param_name' => 'shippingLabelId',
                                         'route_param_field' => 'id_shipping_label',
                                         'confirm_message' => 'Delete selected item?',
@@ -136,10 +146,17 @@ class ShippingLabelGridDefinitionFactory extends AbstractFilterableGridDefinitio
     {
         return (new BulkActionCollection())
             ->add(
+                (new SubmitBulkAction('print_bulk'))
+                    ->setName('Print selected')
+                    ->setOptions([
+                        'submit_route' => 'ps_extrashippinglabels_labels_bulk_print',
+                    ])
+            )
+            ->add(
                 (new SubmitBulkAction('delete_bulk'))
                     ->setName('Delete selected')
                     ->setOptions([
-                        'submit_route' => 'ps_shippinglabels_labels_bulk_delete',
+                        'submit_route' => 'ps_extrashippinglabels_labels_bulk_delete',
                         'confirm_message' => 'Delete selected items?',
                     ])
             );

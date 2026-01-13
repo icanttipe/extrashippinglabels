@@ -1,29 +1,11 @@
 <?php
-/**
- * Copyright since 2007 PrestaShop SA and Contributors
- * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE.md.
- * It is also available through the world-wide-web at this URL:
- * https://opensource.org/licenses/AFL-3.0
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@prestashop.com so we can send you a copy immediately.
- *
- * @author    PrestaShop SA and Contributors <contact@prestashop.com>
- * @copyright Since 2007 PrestaShop SA and Contributors
- * @license   https://opensource.org/licenses/AFL-3.0  Academic Free License (AFL 3.0)
- */
+
 declare(strict_types=1);
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-// Needed for install process
 require_once __DIR__ . '/vendor/autoload.php';
 
 class extrashippinglabels extends Module
@@ -33,7 +15,7 @@ class extrashippinglabels extends Module
         $this->name = 'extrashippinglabels';
         $this->tab = 'shipping_logistics';
         $this->version = '1.0.0';
-        $this->author = 'PrestaShop';
+        $this->author = 'extra/';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '9.0.0', 'max' => _PS_VERSION_];
         $this->bootstrap = true;
@@ -75,16 +57,24 @@ class extrashippinglabels extends Module
             `id_shipping_label` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
             `id_order` INT(11) UNSIGNED NOT NULL,
             `tracking_number` VARCHAR(255) NULL,
-            `module_name` VARCHAR(64) NOT NULL,
+            `module_name` VARCHAR(64) NULL,
             `label_filepath` VARCHAR(255) NULL,
             `date_add` DATETIME NOT NULL,
             `date_upd` DATETIME NOT NULL,
             PRIMARY KEY (`id_shipping_label`),
             KEY `id_order` (`id_order`),
-            KEY `module_name` (`module_name`)
-        ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;';
+            KEY `module_name` (`module_name`),
+            KEY `tracking_number` (`tracking_number`)
+        ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;';
 
-        return Db::getInstance()->execute($sql);
+        $result = Db::getInstance()->execute($sql);
+
+        // Trigger hook to notify other modules
+        if ($result) {
+            Hook::exec('actionShippingLabelsModuleInstalled');
+        }
+
+        return $result;
     }
 
     protected function uninstallSQL()
@@ -114,82 +104,55 @@ class extrashippinglabels extends Module
 
     public function uninstallTab()
     {
-        foreach ($this->tabs as $tabData) {
-            $id_tab = (int)Tab::getIdFromClassName($tabData['class_name']);
-            if ($id_tab) {
-                $tab = new Tab($id_tab);
-                if (!$tab->delete()) {
-                    return false;
-                }
+        /** @var \PrestaShopBundle\Entity\Repository\TabRepository $tabRepository */
+        $tabRepository = $this->get('prestashop.module.extrashippinglabels.repository');
+        $tabs = $tabRepository->findByModule($this->name);
+        foreach ($tabs as $tab) {
+            $tab = new Tab($tab->getId());
+            if (!$tab->delete()) {
+                return false;
             }
         }
         return true;
     }
 
-    /**
-     * Redirect to the modern Symfony controller
-     */
     public function getContent()
     {
-        Tools::redirectAdmin(
-            $this->context->link->getAdminLink('AdminShippingLabel')
-        );
+        Tools::redirectAdmin($this->context->link->getAdminLink('AdminShippingLabel'));
     }
 
-    /**
-     * Hook to display shipping labels on the order view page.
-     */
     public function hookDisplayAdminOrderMainBottom($params)
     {
         if (empty($params['id_order'])) {
             return '';
         }
 
-        $labels = $this->getLabelsForOrder((int)$params['id_order']);
-
-        if (empty($labels)) {
-            return '';
+        try {
+            $repository = $this->get('prestashop.module.extrashippinglabels.repository');
+            $labels = $repository->getLabelsForOrder((int)$params['id_order']);
+        } catch (\Exception $e) {
+            $labels = [];
         }
 
-        // Expose a hook for other modules to modify the labels list before display
+        // For other modules to modify the labels list before display
         Hook::exec('actionModifyShippingLabelsForOrder', [
             'labels' => &$labels,
         ]);
 
-        $this->context->smarty->assign([
-            'shipping_labels' => $labels,
-        ]);
-
-        return $this->display(__FILE__, 'views/templates/hook/order_labels.html.twig');
-    }
-
-    /**
-     * Get labels for a given order ID.
-     * This could be moved to a dedicated ObjectModel or Repository class.
-     *
-     * @param int $id_order
-     * @return array
-     */
-    private function getLabelsForOrder(int $id_order): array
-    {
-        $query = new DbQuery();
-        $query->select('*');
-        $query->from('shipping_label');
-        $query->where('id_order = ' . $id_order);
-
-        $results = Db::getInstance()->executeS($query);
-
-        if (!$results) {
-            return [];
-        }
-
-        // Allow other modules to potentially enrich the label data (e.g., add a direct download link)
-        foreach ($results as &$label) {
-            Hook::exec('actionGetShippingLabelData', [
-                'label' => &$label,
+        $router = $this->get('router');
+        foreach ($labels as &$label) {
+            if (!empty($label['label_filepath'])) {
+                $label['download_url'] = $router->generate('ps_extrashippinglabels_labels_download', [
+                    'shippingLabelId' => (int)$label['id_shipping_label'],
+                ]);
+            }
+            $label['delete_url'] = $router->generate('ps_extrashippinglabels_labels_delete', [
+                'shippingLabelId' => (int)$label['id_shipping_label'],
             ]);
         }
 
-        return $results;
+        $this->context->smarty->assign(['shipping_labels' => $labels]);
+
+        return $this->context->smarty->fetch('module:extrashippinglabels/views/templates/hook/order_labels.tpl');
     }
 }

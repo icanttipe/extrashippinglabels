@@ -1,4 +1,17 @@
 services:
+  # Repository
+  prestashop.module.extrashippinglabels.repository:
+    class: 'PrestaShop\Module\ExtraShippingLabels\Repository\ShippingLabelRepository'
+    public: true
+    arguments:
+      $connection: '@doctrine.dbal.default_connection'
+      $dbPrefix: '%database_prefix%'
+
+  PrestaShop\Module\ExtraShippingLabels\Repository\ShippingLabelRepository:
+    alias: 'prestashop.module.extrashippinglabels.repository'
+    public: true
+
+  # Controllers
   PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ConfigureController:
     autowire: true
     autoconfigure: true
