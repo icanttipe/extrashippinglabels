@@ -177,7 +177,7 @@ class ShippingLabelRepository
             $this->deleteLabelFile($label->label_filepath);
         }
 
-        return $label->delete();
+        return (bool)$label->delete();
     }
 
     /**

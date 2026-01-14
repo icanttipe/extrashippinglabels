@@ -1,32 +1,3 @@
-# @see https://devdocs.prestashop-project.org/9/modules/concepts/controllers/admin-controllers/#how-to-map-an-action-of-your-controller-to-a-uri
-ps_controller_tabs_configure:
-    path: /configure-tabs
-    methods: [GET]
-    defaults:
-        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ConfigureController::indexAction'
-        _legacy_controller: 'AdminExtraShippingLabelsConfigure'
-        _legacy_link: 'AdminExtraShippingLabelsConfigure'
-
-ps_controller_tabs_minimalist:
-    path: /configure-tabs/minimalist
-    methods: [GET]
-    defaults:
-        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\MinimalistController::indexAction'
-
-ps_controller_tabs_secured:
-    path: /configure-tabs/secured
-    methods: [GET]
-    defaults:
-        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\SecuredController::indexAction'
-        _legacy_controller: 'AdminExtraShippingLabelsSecured'
-
-ps_controller_tabs_manual_tab:
-    path: /configure-tabs/manual_tab
-    methods: [GET]
-    defaults:
-        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ManualTabController::indexAction'
-
-
 ps_extrashippinglabels_labels_index:
     path: /extrashippinglabels/labels
     methods: [GET, POST]
@@ -53,11 +24,11 @@ ps_extrashippinglabels_labels_delete:
     requirements:
         shippingLabelId: \d+
 
-ps_extrashippinglabels_labels_bulk_delete:
-    path: /extrashippinglabels/labels/bulk-delete
+ps_extrashippinglabels_labels_delete_bulk:
+    path: /extrashippinglabels/labels/delete-bulk
     methods: [POST]
     defaults:
-        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::bulkDeleteAction'
+        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::deleteBulkAction'
         _legacy_controller: 'AdminShippingLabel'
         _legacy_link: 'AdminShippingLabel'
 
@@ -71,18 +42,18 @@ ps_extrashippinglabels_labels_download:
     requirements:
         shippingLabelId: \d+
 
-ps_extrashippinglabels_labels_bulk_print:
-    path: /extrashippinglabels/labels/bulk-print
-    methods: [POST]
-    defaults:
-        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::bulkPrintAction'
-        _legacy_controller: 'AdminShippingLabel'
-        _legacy_link: 'AdminShippingLabel'
-
 ps_extrashippinglabels_labels_generate_bulk:
   path: /extrashippinglabels/labels/generate-bulk
   methods: [POST]
   defaults:
     _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\BulkLabelGenerationController::generateBulkAction'
+    _legacy_controller: 'AdminOrders' # Keep the context on the Orders page
+    _legacy_link: 'AdminOrders'
+
+ps_extrashippinglabels_labels_download_bulk:
+  path: /extrashippinglabels/labels/download-bulk
+  methods: [POST]
+  defaults:
+    _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::downloadBulkAction'
     _legacy_controller: 'AdminOrders' # Keep the context on the Orders page
     _legacy_link: 'AdminOrders'

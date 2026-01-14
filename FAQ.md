@@ -4,7 +4,7 @@
 
 ### What is the Shipping Labels module?
 
-It's a **foundation module** for PrestaShop 9 that provides standardized storage, management, and display of shipping labels from any carrier. Think of it as a common infrastructure that carrier modules can plug into instead of each building their own label management system.
+It's a **foundation module** for PrestaShop 9 that provides standardized storage, management, and display of shipping labels from any carrier. Think of it as a common infrastructure that carrier modules can plug into instead of building their own label management system.
 
 ### Who is this module for?
 

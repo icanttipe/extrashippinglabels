@@ -178,6 +178,13 @@ class extrashippinglabels extends Module
                     ->setOptions([
                         'submit_route' => 'ps_extrashippinglabels_labels_generate_bulk',
                     ])
+            )
+            ->add(
+                (new PrestaShop\PrestaShop\Core\Grid\Action\Bulk\Type\SubmitBulkAction('download_extra_shipping_labels'))
+                    ->setName($this->l('Download shipping labels'))
+                    ->setOptions([
+                        'submit_route' => 'ps_extrashippinglabels_labels_download_bulk',
+                    ])
             );
     }
 

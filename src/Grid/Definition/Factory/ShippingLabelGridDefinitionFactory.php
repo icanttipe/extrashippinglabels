@@ -11,6 +11,7 @@ use PrestaShop\PrestaShop\Core\Grid\Column\ColumnCollection;
 use PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\ActionColumn;
 use PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\BulkActionColumn;
 use PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\DataColumn;
+use PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\LinkColumn;
 use PrestaShop\PrestaShop\Core\Grid\Definition\Factory\AbstractFilterableGridDefinitionFactory;
 use PrestaShop\PrestaShop\Core\Grid\Filter\Filter;
 use PrestaShop\PrestaShop\Core\Grid\Filter\FilterCollection;
@@ -28,13 +29,13 @@ class ShippingLabelGridDefinitionFactory extends AbstractFilterableGridDefinitio
 
     protected function getName()
     {
-        return 'Shipping Labels';
+        return 'Shipping labels';
     }
 
     protected function getColumns()
     {
         return (new ColumnCollection())
-            ->add((new BulkActionColumn('bulk'))
+            ->add((new BulkActionColumn('shipping_labels_bulk'))
                 ->setOptions(['bulk_field' => 'id_shipping_label']))
             ->add(
                 (new DataColumn('id_shipping_label'))
@@ -42,13 +43,18 @@ class ShippingLabelGridDefinitionFactory extends AbstractFilterableGridDefinitio
                     ->setOptions(['field' => 'id_shipping_label'])
             )
             ->add(
-                (new DataColumn('id_order'))
-                    ->setName('Order ID')
-                    ->setOptions(['field' => 'id_order'])
+                (new LinkColumn('id_order'))
+                    ->setName($this->trans('Order ID', [], 'Admin.Global'))
+                    ->setOptions([
+                        'field' => 'id_order',
+                        'route' => 'admin_orders_view',
+                        'route_param_name' => 'orderId',
+                        'route_param_field' => 'id_order',
+                    ])
             )
             ->add(
                 (new DataColumn('tracking_number'))
-                    ->setName('Tracking Number')
+                    ->setName('Tracking number')
                     ->setOptions(['field' => 'tracking_number'])
             )
             ->add(
@@ -74,16 +80,6 @@ class ShippingLabelGridDefinitionFactory extends AbstractFilterableGridDefinitio
                                         'route' => 'ps_extrashippinglabels_labels_download',
                                         'route_param_name' => 'shippingLabelId',
                                         'route_param_field' => 'id_shipping_label',
-                                    ])
-                            )
-                            ->add(
-                                (new LinkRowAction('view_order'))
-                                    ->setName('View Order')
-                                    ->setIcon('remove_red_eye')
-                                    ->setOptions([
-                                        'route' => 'admin_orders_view',
-                                        'route_param_name' => 'orderId',
-                                        'route_param_field' => 'id_order',
                                     ])
                             )
                             ->add(
@@ -146,17 +142,17 @@ class ShippingLabelGridDefinitionFactory extends AbstractFilterableGridDefinitio
     {
         return (new BulkActionCollection())
             ->add(
-                (new SubmitBulkAction('print_bulk'))
-                    ->setName('Print selected')
+                (new SubmitBulkAction('download_bulk'))
+                    ->setName('Download')
                     ->setOptions([
-                        'submit_route' => 'ps_extrashippinglabels_labels_bulk_print',
+                        'submit_route' => 'ps_extrashippinglabels_labels_download_bulk',
                     ])
             )
             ->add(
                 (new SubmitBulkAction('delete_bulk'))
-                    ->setName('Delete selected')
+                    ->setName('Delete')
                     ->setOptions([
-                        'submit_route' => 'ps_extrashippinglabels_labels_bulk_delete',
+                        'submit_route' => 'ps_extrashippinglabels_labels_delete_bulk',
                         'confirm_message' => 'Delete selected items?',
                     ])
             );

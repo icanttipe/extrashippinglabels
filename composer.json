@@ -2,7 +2,9 @@
   "name": "extra/extrashippinglabels",
   "authors": [],
   "require": {
-    "php": ">=8.1"
+    "php": ">=8.1",
+    "setasign/fpdf": "1.8.*",
+    "setasign/fpdi": "^2.5"
   },
   "autoload": {
     "psr-4": {

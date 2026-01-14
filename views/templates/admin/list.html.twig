@@ -7,3 +7,9 @@
         </div>
     </div>
 {% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+
+    <script src="{{ asset('/modules/extrashippinglabels/views/js/shipping_labels.js') }}"></script>
+{% endblock %}
