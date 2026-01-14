@@ -41,6 +41,8 @@ class extrashippinglabels extends Module
         return parent::install() &&
             $this->installSQL() &&
             $this->registerHook('displayAdminOrderMainBottom') &&
+            $this->registerHook('actionOrderGridDefinitionModifier') &&
+            $this->registerHook('actionOrderGenerateShippingLabel') &&
             $this->installTab();
     }
 
@@ -48,6 +50,8 @@ class extrashippinglabels extends Module
     {
         return parent::uninstall() &&
             $this->uninstallSQL() &&
+            $this->unregisterHook('actionOrderGridDefinitionModifier') &&
+            $this->unregisterHook('actionOrderGenerateShippingLabel') &&
             $this->uninstallTab();
     }
 
@@ -154,5 +158,38 @@ class extrashippinglabels extends Module
         $this->context->smarty->assign(['shipping_labels' => $labels]);
 
         return $this->context->smarty->fetch('module:extrashippinglabels/views/templates/hook/order_labels.tpl');
+    }
+
+    /**
+     * Hook to add a bulk action to the orders grid.
+     *
+     * @param array $params
+     */
+    public function hookActionOrderGridDefinitionModifier(array &$params)
+    {
+        /** @var \PrestaShop\PrestaShop\Core\Grid\Definition\GridDefinitionInterface $definition */
+        $definition = $params['definition'];
+
+        $definition
+            ->getBulkActions()
+            ->add(
+                (new PrestaShop\PrestaShop\Core\Grid\Action\Bulk\Type\SubmitBulkAction('generate_extra_shipping_labels'))
+                    ->setName($this->l('Generate shipping labels'))
+                    ->setOptions([
+                        'submit_route' => 'ps_extrashippinglabels_labels_generate_bulk',
+                    ])
+            );
+    }
+
+    /**
+     * Custom hook for generating a shipping label for a specific order.
+     * This hook is intended to be triggered by this module but implemented by other modules.
+     *
+     * @param array $params
+     */
+    public function hookActionOrderGenerateShippingLabel(array $params)
+    {
+        // This is a custom hook, other modules should implement their logic here.
+        // The module triggering this hook doesn't need to do anything.
     }
 }

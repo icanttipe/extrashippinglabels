@@ -28,6 +28,10 @@ services:
     autowire: true
     autoconfigure: true
 
+  PrestaShop\Module\ExtraShippingLabels\Controller\BulkLabelGenerationController:
+    autowire: true
+    autoconfigure: true
+
   prestashop.module.extrashippinglabels.grid.query_builder:
     class: 'PrestaShop\Module\ExtraShippingLabels\Grid\Query\ShippingLabelQueryBuilder'
     public: true
