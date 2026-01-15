@@ -1,50 +1,50 @@
 ps_extrashippinglabels_labels_index:
-    path: /extrashippinglabels/labels
-    methods: [GET, POST]
-    defaults:
-        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::indexAction'
-        _legacy_controller: 'AdminShippingLabel'
-        _legacy_link: 'AdminShippingLabel'
+  path: /extrashippinglabels/labels
+  methods: [ GET, POST ]
+  defaults:
+    _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::indexAction'
+    _legacy_controller: 'AdminShippingLabel'
+    _legacy_link: 'AdminShippingLabel'
 
 ps_extrashippinglabels_labels_search:
-    path: /extrashippinglabels/labels/search
-    methods: [POST]
-    defaults:
-        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::searchAction'
-        _legacy_controller: 'AdminShippingLabel'
-        _legacy_link: 'AdminShippingLabel'
+  path: /extrashippinglabels/labels/search
+  methods: [ POST ]
+  defaults:
+    _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::searchAction'
+    _legacy_controller: 'AdminShippingLabel'
+    _legacy_link: 'AdminShippingLabel'
 
 ps_extrashippinglabels_labels_delete:
-    path: /extrashippinglabels/labels/{shippingLabelId}/delete
-    methods: [POST]
-    defaults:
-        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::deleteAction'
-        _legacy_controller: 'AdminShippingLabel'
-        _legacy_link: 'AdminShippingLabel'
-    requirements:
-        shippingLabelId: \d+
+  path: /extrashippinglabels/labels/{shippingLabelId}/delete
+  methods: [ POST ]
+  defaults:
+    _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::deleteAction'
+    _legacy_controller: 'AdminShippingLabel'
+    _legacy_link: 'AdminShippingLabel'
+  requirements:
+    shippingLabelId: \d+
 
 ps_extrashippinglabels_labels_delete_bulk:
-    path: /extrashippinglabels/labels/delete-bulk
-    methods: [POST]
-    defaults:
-        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::deleteBulkAction'
-        _legacy_controller: 'AdminShippingLabel'
-        _legacy_link: 'AdminShippingLabel'
+  path: /extrashippinglabels/labels/delete-bulk
+  methods: [ POST ]
+  defaults:
+    _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::deleteBulkAction'
+    _legacy_controller: 'AdminShippingLabel'
+    _legacy_link: 'AdminShippingLabel'
 
 ps_extrashippinglabels_labels_download:
-    path: /extrashippinglabels/labels/{shippingLabelId}/download
-    methods: [GET]
-    defaults:
-        _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::downloadAction'
-        _legacy_controller: 'AdminShippingLabel'
-        _legacy_link: 'AdminShippingLabel'
-    requirements:
-        shippingLabelId: \d+
+  path: /extrashippinglabels/labels/{shippingLabelId}/download
+  methods: [ GET ]
+  defaults:
+    _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::downloadAction'
+    _legacy_controller: 'AdminShippingLabel'
+    _legacy_link: 'AdminShippingLabel'
+  requirements:
+    shippingLabelId: \d+
 
 ps_extrashippinglabels_labels_generate_bulk:
   path: /extrashippinglabels/labels/generate-bulk
-  methods: [POST]
+  methods: [ POST ]
   defaults:
     _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\BulkLabelGenerationController::generateBulkAction'
     _legacy_controller: 'AdminOrders' # Keep the context on the Orders page
@@ -52,7 +52,7 @@ ps_extrashippinglabels_labels_generate_bulk:
 
 ps_extrashippinglabels_labels_download_bulk:
   path: /extrashippinglabels/labels/download-bulk
-  methods: [POST]
+  methods: [ POST ]
   defaults:
     _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::downloadBulkAction'
     _legacy_controller: 'AdminOrders' # Keep the context on the Orders page

@@ -43,6 +43,8 @@ class extrashippinglabels extends Module
             $this->registerHook('displayAdminOrderMainBottom') &&
             $this->registerHook('actionOrderGridDefinitionModifier') &&
             $this->registerHook('actionOrderGenerateShippingLabel') &&
+            $this->registerHook('actionBeforeGenerateShippingLabel') &&
+            $this->registerHook('actionAfterGenerateShippingLabel') &&
             $this->installTab();
     }
 
@@ -52,6 +54,8 @@ class extrashippinglabels extends Module
             $this->uninstallSQL() &&
             $this->unregisterHook('actionOrderGridDefinitionModifier') &&
             $this->unregisterHook('actionOrderGenerateShippingLabel') &&
+            $this->unregisterHook('actionBeforeGenerateShippingLabel') &&
+            $this->unregisterHook('actionAfterGenerateShippingLabel') &&
             $this->uninstallTab();
     }
 

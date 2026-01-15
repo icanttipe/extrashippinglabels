@@ -2,8 +2,14 @@
 
 namespace PrestaShop\Module\ExtraShippingLabels\Controller\Admin;
 
+use Carrier;
+use CarrierModule;
 use Exception;
 use Hook;
+use Module;
+use Order;
+use PrestaShop\Module\ExtraShippingLabels\Contract\ShippingLabelGeneratorInterface;
+use PrestaShop\Module\ExtraShippingLabels\Exception\CantGenerateLabelException;
 use PrestaShop\Module\ExtraShippingLabels\Filters\ShippingLabelFilters;
 use PrestaShop\Module\ExtraShippingLabels\Grid\Definition\Factory\ShippingLabelGridDefinitionFactory;
 use PrestaShop\Module\ExtraShippingLabels\Repository\ShippingLabelRepository;
@@ -116,10 +122,15 @@ class ShippingLabelController extends PrestaShopAdminController
     }
 
     #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
-    public function bulkDownloadAction(Request $request, ShippingLabelRepository $repository): Response
+    public function downloadBulkAction(Request $request, ShippingLabelRepository $repository): Response
     {
         $shippingLabelIds = $request->request->all('shipping_label_shipping_labels_bulk');
         $orderIds = $request->request->all('order_orders_bulk');
+
+        if (empty($shippingLabelIds) && empty($orderIds)) {
+            $this->addFlash('error', $this->trans('You must select at least one item to download.', [], 'Admin.Notifications.Error'));
+            return $this->redirectToList();
+        }
 
         if (!empty($orderIds)) {
             foreach ($orderIds as $orderId) {
@@ -129,7 +140,7 @@ class ShippingLabelController extends PrestaShopAdminController
         }
 
         if (empty($shippingLabelIds)) {
-            $this->addFlash('error', $this->trans('You must select at least one item to download.', [], 'Admin.Notifications.Error'));
+            $this->addFlash('error', $this->trans('No shipping labels found', [], 'Admin.Notifications.Error'));
             return $this->redirectToList();
         }
 
@@ -170,73 +181,68 @@ class ShippingLabelController extends PrestaShopAdminController
         }
     }
 
-    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
-    public function bulkPrintAction(Request $request, ShippingLabelRepository $repository): Response
-    {
-        $shippingLabelIds = $request->request->all('shipping_label_shipping_labels_bulk');
-
-        if (empty($shippingLabelIds)) {
-            $this->addFlash('error', $this->trans('You must select at least one item to print.', [], 'Admin.Notifications.Error'));
-            return $this->redirectToList();
-        }
-
-        // Collect all valid PDF files
-        $pdfFiles = [];
-        foreach ($shippingLabelIds as $shippingLabelId) {
-            $label = $repository->getLabelById((int) $shippingLabelId);
-            if ($label && !empty($label->label_filepath)) {
-                $filepath = $repository->getSecureLabelFilepath($label->label_filepath);
-                if ($filepath && file_exists($filepath)) {
-                    $pdfFiles[] = $filepath;
-                }
-            }
-        }
-
-        if (empty($pdfFiles)) {
-            $this->addFlash('error', $this->trans('No valid label files found for the selected items.', [], 'Modules.ExtraShippingLabels.Admin'));
-            return $this->redirectToList();
-        }
-
-        // If only one file, download it directly
-        if (count($pdfFiles) === 1) {
-            $response = new BinaryFileResponse($pdfFiles[0]);
-            $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, basename($pdfFiles[0]));
-            return $response;
-        }
-
-        // Merge multiple PDFs into one
-        try {
-            $mergedPdf = $this->mergePdfFiles($pdfFiles);
-
-            $filename = 'shipping_labels_' . date('Y-m-d_His') . '.pdf';
-            $tempFile = sys_get_temp_dir() . '/' . $filename;
-            file_put_contents($tempFile, $mergedPdf);
-
-            $response = new BinaryFileResponse($tempFile);
-            $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename);
-            $response->deleteFileAfterSend();
-
-            return $response;
-        } catch (Exception $e) {
-            $this->addFlash('error', $this->trans('Error merging PDF files: %error%', ['%error%' => $e->getMessage()], 'Modules.ExtraShippingLabels.Admin'));
-            return $this->redirectToList();
-        }
-    }
-
-    public function generateBulkAction(Request $request): RedirectResponse
+    public function generateBulkAction(Request $request, ShippingLabelRepository $repository): RedirectResponse
     {
         $orderIds = $request->request->all('order_orders_bulk');
 
-        if (!empty($orderIds)) {
-            $generatedCount = 0;
-            foreach ($orderIds as $orderId) {
-                Hook::exec('actionOrderGenerateShippingLabel', ['id_order' => (int)$orderId]);
-                $generatedCount++;
+        if (empty($orderIds)) {
+            $this->addFlash('error', $this->trans('You must select at least one order.', [], 'Modules.Extrashippinglabels.Admin'));
+            return $this->redirectToRoute('admin_orders_index');
+        }
+
+        $generatedCount = 0;
+        $failedOrders = [];
+
+        foreach ($orderIds as $orderId) {
+            $order = new Order((int)$orderId);
+            if (!\Validate::isLoadedObject($order)) {
+                $failedOrders[$orderId] = $this->trans('Order not found.', [], 'Modules.Extrashippinglabels.Admin');
+                continue;
             }
 
-            $this->addFlash('success', $this->trans('Hook for generating labels triggered for %d selected orders.', ['%d' => $generatedCount], 'Modules.Extrashippinglabels.Admin'));
-        } else {
-            $this->addFlash('error', $this->trans('You must select at least one order.', [], 'Modules.Extrashippinglabels.Admin'));
+            $carrier = new Carrier($order->id_carrier);
+            if (!\Validate::isLoadedObject($carrier) || !$carrier->active) {
+                $failedOrders[$orderId] = $this->trans('Carrier not found or inactive.', [], 'Modules.Extrashippinglabels.Admin');
+                continue;
+            }
+
+            /** @var CarrierModule|ShippingLabelGeneratorInterface $carrierModule */
+            $carrierModule = CarrierModule::getInstanceByName($carrier->external_module_name);
+            if (!$carrierModule) {
+                $failedOrders[$orderId] = $this->trans('Carrier module not found.', [], 'Modules.Extrashippinglabels.Admin');
+                continue;
+            }
+
+            try {
+                Hook::exec('actionBeforeGenerateShippingLabel', ['order' => $order]);
+
+                if ($carrierModule instanceof ShippingLabelGeneratorInterface && $carrierModule->canGenerateLabel($order)) {
+                    $labelData = $carrierModule->generateLabel($order);
+                    $repository->createLabel($order->id, $labelData->trackingNumber, $labelData->moduleName, $labelData->filePath);
+                } else {
+                    // Fallback to old hook for backward compatibility
+                    Hook::exec('actionOrderGenerateShippingLabel', ['id_order' => $order->id]);
+                }
+
+                Hook::exec('actionAfterGenerateShippingLabel', ['order' => $order]);
+                $generatedCount++;
+            } catch (CantGenerateLabelException $e) {
+                $failedOrders[$orderId] = $e->getMessage();
+            } catch (Exception $e) {
+                $failedOrders[$orderId] = $this->trans('An unexpected error occurred: %error%', ['%error%' => $e->getMessage()], 'Modules.Extrashippinglabels.Admin');
+            }
+        }
+
+        if ($generatedCount > 0) {
+            $this->addFlash('success', $this->trans('%count% shipping label(s) generated successfully.', ['%count%' => $generatedCount], 'Modules.Extrashippinglabels.Admin'));
+        }
+
+        if (!empty($failedOrders)) {
+            $errorMessage = $this->trans('Failed to generate labels for the following orders:', [], 'Modules.Extrashippinglabels.Admin');
+            foreach ($failedOrders as $orderId => $error) {
+                $errorMessage .= "<br> - Order #$orderId: $error";
+            }
+            $this->addFlash('error', $errorMessage);
         }
 
         return $this->redirectToRoute('admin_orders_index');
