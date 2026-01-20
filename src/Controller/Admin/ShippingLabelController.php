@@ -50,10 +50,7 @@ class ShippingLabelController extends PrestaShopAdminController
     }
 
     #[AdminSecurity("is_granted('delete', request.get('_legacy_controller'))")]
-    public function deleteAction(
-        int $shippingLabelId,
-        ShippingLabelRepository $repository
-    ) {
+    public function deleteAction(int $shippingLabelId, ShippingLabelRepository $repository) {
         if ($repository->deleteLabel($shippingLabelId)) {
             $this->addFlash('success', $this->trans('Successful deletion.', [], 'Admin.Notifications.Success'));
         } else {
@@ -116,7 +113,7 @@ class ShippingLabelController extends PrestaShopAdminController
     }
 
     #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
-    public function bulkDownloadAction(Request $request, ShippingLabelRepository $repository): Response
+    public function downloadBulkAction(Request $request, ShippingLabelRepository $repository): Response
     {
         $shippingLabelIds = $request->request->all('shipping_label_shipping_labels_bulk');
         $orderIds = $request->request->all('order_orders_bulk');
@@ -170,59 +167,6 @@ class ShippingLabelController extends PrestaShopAdminController
         }
     }
 
-    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
-    public function bulkPrintAction(Request $request, ShippingLabelRepository $repository): Response
-    {
-        $shippingLabelIds = $request->request->all('shipping_label_shipping_labels_bulk');
-
-        if (empty($shippingLabelIds)) {
-            $this->addFlash('error', $this->trans('You must select at least one item to print.', [], 'Admin.Notifications.Error'));
-            return $this->redirectToList();
-        }
-
-        // Collect all valid PDF files
-        $pdfFiles = [];
-        foreach ($shippingLabelIds as $shippingLabelId) {
-            $label = $repository->getLabelById((int) $shippingLabelId);
-            if ($label && !empty($label->label_filepath)) {
-                $filepath = $repository->getSecureLabelFilepath($label->label_filepath);
-                if ($filepath && file_exists($filepath)) {
-                    $pdfFiles[] = $filepath;
-                }
-            }
-        }
-
-        if (empty($pdfFiles)) {
-            $this->addFlash('error', $this->trans('No valid label files found for the selected items.', [], 'Modules.ExtraShippingLabels.Admin'));
-            return $this->redirectToList();
-        }
-
-        // If only one file, download it directly
-        if (count($pdfFiles) === 1) {
-            $response = new BinaryFileResponse($pdfFiles[0]);
-            $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, basename($pdfFiles[0]));
-            return $response;
-        }
-
-        // Merge multiple PDFs into one
-        try {
-            $mergedPdf = $this->mergePdfFiles($pdfFiles);
-
-            $filename = 'shipping_labels_' . date('Y-m-d_His') . '.pdf';
-            $tempFile = sys_get_temp_dir() . '/' . $filename;
-            file_put_contents($tempFile, $mergedPdf);
-
-            $response = new BinaryFileResponse($tempFile);
-            $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename);
-            $response->deleteFileAfterSend();
-
-            return $response;
-        } catch (Exception $e) {
-            $this->addFlash('error', $this->trans('Error merging PDF files: %error%', ['%error%' => $e->getMessage()], 'Modules.ExtraShippingLabels.Admin'));
-            return $this->redirectToList();
-        }
-    }
-
     public function generateBulkAction(Request $request): RedirectResponse
     {
         $orderIds = $request->request->all('order_orders_bulk');
@@ -266,4 +210,3 @@ class ShippingLabelController extends PrestaShopAdminController
         return $this->redirectToRoute('ps_extrashippinglabels_labels_index');
     }
 }
-
