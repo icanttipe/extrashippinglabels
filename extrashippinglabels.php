@@ -108,13 +108,13 @@ class extrashippinglabels extends Module
 
     public function uninstallTab()
     {
-        /** @var \PrestaShopBundle\Entity\Repository\TabRepository $tabRepository */
-        $tabRepository = $this->get('prestashop.module.extrashippinglabels.repository');
-        $tabs = $tabRepository->findByModule($this->name);
-        foreach ($tabs as $tab) {
-            $tab = new Tab($tab->getId());
-            if (!$tab->delete()) {
-                return false;
+        foreach ($this->tabs as $tabData) {
+            $tabId = (int) Tab::getIdFromClassName($tabData['class_name']);
+            if ($tabId) {
+                $tab = new Tab($tabId);
+                if (!$tab->delete()) {
+                    return false;
+                }
             }
         }
         return true;
