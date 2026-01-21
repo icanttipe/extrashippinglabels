@@ -16,7 +16,7 @@ ps_extrashippinglabels_labels_search:
 
 ps_extrashippinglabels_labels_delete:
     path: /extrashippinglabels/labels/{shippingLabelId}/delete
-    methods: [POST]
+    methods: [GET,POST]
     defaults:
         _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::deleteAction'
         _legacy_controller: 'AdminShippingLabel'

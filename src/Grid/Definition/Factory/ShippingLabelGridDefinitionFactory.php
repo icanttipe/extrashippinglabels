@@ -83,11 +83,10 @@ class ShippingLabelGridDefinitionFactory extends AbstractFilterableGridDefinitio
                                     ])
                             )
                             ->add(
-                                (new SubmitRowAction('delete'))
+                                (new LinkRowAction('delete'))
                                     ->setName('Delete')
                                     ->setIcon('delete')
                                     ->setOptions([
-                                        'method' => 'POST',
                                         'route' => 'ps_extrashippinglabels_labels_delete',
                                         'route_param_name' => 'shippingLabelId',
                                         'route_param_field' => 'id_shipping_label',
