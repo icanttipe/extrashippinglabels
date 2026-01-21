@@ -46,7 +46,7 @@ ps_extrashippinglabels_labels_generate_bulk:
   path: /extrashippinglabels/labels/generate-bulk
   methods: [POST]
   defaults:
-    _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\BulkLabelGenerationController::generateBulkAction'
+    _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::generateBulkAction'
     _legacy_controller: 'AdminOrders' # Keep the context on the Orders page
     _legacy_link: 'AdminOrders'
 
