@@ -50,11 +50,16 @@ class ShippingLabelController extends PrestaShopAdminController
     }
 
     #[AdminSecurity("is_granted('delete', request.get('_legacy_controller'))")]
-    public function deleteAction(int $shippingLabelId, ShippingLabelRepository $repository) {
+    public function deleteAction(int $shippingLabelId, Request $request, ShippingLabelRepository $repository) {
         if ($repository->deleteLabel($shippingLabelId)) {
             $this->addFlash('success', $this->trans('Successful deletion.', [], 'Admin.Notifications.Success'));
         } else {
             $this->addFlash('error', $this->trans('Cannot find shipping label %id%', ['%id%' => $shippingLabelId], 'Modules.ExtraShippingLabels.Admin'));
+        }
+
+        $redirectUrl = $request->query->get('redirect');
+        if ($redirectUrl) {
+            return $this->redirect($redirectUrl);
         }
 
         return $this->redirectToList();

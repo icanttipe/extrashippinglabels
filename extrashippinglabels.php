@@ -40,7 +40,8 @@ class extrashippinglabels extends Module
     {
         return parent::install() &&
             $this->installSQL() &&
-            $this->registerHook('displayAdminOrderMainBottom') &&
+            $this->registerHook('displayAdminOrderTabLink') &&
+            $this->registerHook('displayAdminOrderTabContent') &&
             $this->registerHook('actionOrderGridDefinitionModifier') &&
             $this->registerHook('actionOrderGenerateShippingLabel') &&
             $this->installTab();
@@ -50,6 +51,8 @@ class extrashippinglabels extends Module
     {
         return parent::uninstall() &&
             $this->uninstallSQL() &&
+            $this->unregisterHook('displayAdminOrderTabLink') &&
+            $this->unregisterHook('displayAdminOrderTabContent') &&
             $this->unregisterHook('actionOrderGridDefinitionModifier') &&
             $this->unregisterHook('actionOrderGenerateShippingLabel') &&
             $this->uninstallTab();
@@ -125,7 +128,27 @@ class extrashippinglabels extends Module
         Tools::redirectAdmin($this->context->link->getAdminLink('AdminShippingLabel'));
     }
 
-    public function hookDisplayAdminOrderMainBottom($params)
+    public function hookDisplayAdminOrderTabLink($params)
+    {
+        if (empty($params['id_order'])) {
+            return '';
+        }
+
+        try {
+            $repository = $this->get('prestashop.module.extrashippinglabels.repository');
+            $labels = $repository->getLabelsForOrder((int)$params['id_order']);
+        } catch (\Exception $e) {
+            $labels = [];
+        }
+
+        $this->context->smarty->assign([
+            'labels_count' => count($labels),
+        ]);
+
+        return $this->context->smarty->fetch('module:extrashippinglabels/views/templates/hook/tab_link.tpl');
+    }
+
+    public function hookDisplayAdminOrderTabContent($params)
     {
         if (empty($params['id_order'])) {
             return '';
@@ -144,6 +167,8 @@ class extrashippinglabels extends Module
         ]);
 
         $router = $this->get('router');
+        $orderViewUrl = $router->generate('admin_orders_view', ['orderId' => (int)$params['id_order']]);
+
         foreach ($labels as &$label) {
             if (!empty($label['label_filepath'])) {
                 $label['download_url'] = $router->generate('ps_extrashippinglabels_labels_download', [
@@ -152,12 +177,20 @@ class extrashippinglabels extends Module
             }
             $label['delete_url'] = $router->generate('ps_extrashippinglabels_labels_delete', [
                 'shippingLabelId' => (int)$label['id_shipping_label'],
+                'redirect' => $orderViewUrl,
             ]);
+
+            // Format date for display
+            $dateAdd = new \DateTime($label['date_add']);
+            $label['date_formatted'] = $dateAdd->format('d/m/Y H:i');
         }
 
-        $this->context->smarty->assign(['shipping_labels' => $labels]);
+        $this->context->smarty->assign([
+            'shipping_labels' => $labels,
+            'id_order' => (int)$params['id_order'],
+        ]);
 
-        return $this->context->smarty->fetch('module:extrashippinglabels/views/templates/hook/order_labels.tpl');
+        return $this->context->smarty->fetch('module:extrashippinglabels/views/templates/hook/tab_content.tpl');
     }
 
     /**
