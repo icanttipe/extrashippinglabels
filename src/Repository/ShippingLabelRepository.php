@@ -22,7 +22,7 @@ declare(strict_types=1);
 namespace PrestaShop\Module\ExtraShippingLabels\Repository;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Exception;
+use Exception;
 use ShippingLabel;
 use Hook;
 
@@ -68,9 +68,8 @@ class ShippingLabelRepository
     /**
      * Get all labels for a specific order
      *
-     * @param int $orderId
-     * @return array
-     * @throws Exception
+     * @throws \Doctrine\DBAL\Exception
+     * @throws \PrestaShopException
      */
     public function getLabelsForOrder(int $orderId): array
     {
@@ -105,27 +104,25 @@ class ShippingLabelRepository
      * @param string|null $trackingNumber
      * @param string|null $labelFilepath
      * @return int The ID of the created label, or 0 on failure
-     * @throws \Exception if the label file is not a valid PDF
+     * @throws Exception if the label file is not a valid PDF
      */
     public function createLabel(
         int $orderId,
         string $moduleName,
         ?string $trackingNumber = null,
-        ?string $labelFilepath = null
+        ?string $fileContents = null
     ): int {
-        // Validate PDF file if provided
-        if ($labelFilepath !== null) {
-            $fullPath = $this->getSecureLabelFilepath($labelFilepath);
-            if ($fullPath && file_exists($fullPath) && !$this->isValidPdfFile($fullPath)) {
-                throw new \Exception('The label file must be a valid PDF');
-            }
-        }
+
+        $labelsDir = $this->getLabelsDirectory();
+        $filename = sprintf('order_%d_%s.pdf', $orderId, date('YmdHis'));
+        $labelFilepath = $labelsDir . $filename;
+        file_put_contents($labelFilepath, $fileContents);
 
         $label = new ShippingLabel();
         $label->id_order = $orderId;
         $label->module_name = $moduleName;
         $label->tracking_number = $trackingNumber;
-        $label->label_filepath = $labelFilepath;
+        $label->label_filepath = $filename;
 
         if ($label->add()) {
             return (int) $label->id;
@@ -309,7 +306,7 @@ class ShippingLabelRepository
      *
      * @param string $trackingNumber
      * @return array
-     * @throws Exception
+     * @throws \Doctrine\DBAL\Exception
      */
     public function findByTrackingNumber(string $trackingNumber): array
     {
@@ -327,7 +324,7 @@ class ShippingLabelRepository
      *
      * @param string $moduleName
      * @return array
-     * @throws Exception
+     * @throws \Doctrine\DBAL\Exception
      */
     public function findByModule(string $moduleName): array
     {
