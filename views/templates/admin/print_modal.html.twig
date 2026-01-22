@@ -1,0 +1,43 @@
+{% embed '@PrestaShop/Admin/Helpers/bootstrap_popup.html.twig' with {
+    id: 'print_shipping_labels_modal',
+    title: 'Print shipping labels'|trans({}, 'Modules.Extrashippinglabels.Admin'),
+    closable: true,
+    closeLabel: 'Cancel'|trans({}, 'Admin.Actions'),
+    actions: [{
+        type: 'button',
+        label: 'Print'|trans({}, 'Admin.Actions'),
+        class: 'btn btn-primary js-submit-print-labels',
+    }],
+} %}
+    {% block content %}
+        <div class="modal-body">
+            <form id="print_shipping_labels_form" action="{{ print_url }}" method="POST">
+                <div class="form-group">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="print_mode" id="print_mode_missing" value="missing_only" checked>
+                        <label class="form-check-label" for="print_mode_missing">
+                            <strong>{{ 'Generate missing labels only'|trans({}, 'Modules.Extrashippinglabels.Admin') }}</strong>
+                            <small class="text-muted d-block">{{ 'Only generates labels for orders without any'|trans({}, 'Modules.Extrashippinglabels.Admin') }}</small>
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="print_mode" id="print_mode_regenerate" value="regenerate_all">
+                        <label class="form-check-label" for="print_mode_regenerate">
+                            <strong>{{ 'Regenerate all labels'|trans({}, 'Modules.Extrashippinglabels.Admin') }}</strong>
+                            <small class="text-muted d-block">{{ 'Generates new labels for all orders, replacing existing ones'|trans({}, 'Modules.Extrashippinglabels.Admin') }}</small>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="print_mode" id="print_mode_existing" value="existing_only">
+                        <label class="form-check-label" for="print_mode_existing">
+                            <strong>{{ 'Use existing labels only'|trans({}, 'Modules.Extrashippinglabels.Admin') }}</strong>
+                            <small class="text-muted d-block">{{ 'Skips orders without labels'|trans({}, 'Modules.Extrashippinglabels.Admin') }}</small>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="print_labels_order_ids_container"></div>
+            </form>
+        </div>
+    {% endblock %}
+{% endembed %}

@@ -205,6 +205,88 @@ class ShippingLabelController extends PrestaShopAdminController
         return $this->redirectToRoute('admin_orders_index');
     }
 
+    private const PRINT_MODE_MISSING_ONLY = 'missing_only';
+    private const PRINT_MODE_REGENERATE_ALL = 'regenerate_all';
+    private const PRINT_MODE_EXISTING_ONLY = 'existing_only';
+
+    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
+    public function printBulkAction(Request $request, ShippingLabelRepository $repository): Response
+    {
+        $orderIds = $request->request->all('order_ids');
+        $printMode = $request->request->get('print_mode', self::PRINT_MODE_MISSING_ONLY);
+
+        if (empty($orderIds)) {
+            $this->addFlash('error', $this->trans('You must select at least one order.', [], 'Modules.Extrashippinglabels.Admin'));
+            return $this->redirectToRoute('admin_orders_index');
+        }
+
+        $pdfFiles = [];
+        $generationErrors = [];
+
+        foreach ($orderIds as $orderId) {
+            $orderId = (int) $orderId;
+            $existingLabels = $repository->getLabelsForOrder($orderId);
+            $hasExistingLabels = !empty($existingLabels);
+
+            $shouldGenerate = match ($printMode) {
+                self::PRINT_MODE_MISSING_ONLY => !$hasExistingLabels,
+                self::PRINT_MODE_REGENERATE_ALL => true,
+                self::PRINT_MODE_EXISTING_ONLY => false,
+                default => false,
+            };
+
+            if ($shouldGenerate) {
+                try {
+                    Hook::exec('actionOrderGenerateShippingLabel', ['id_order' => $orderId]);
+                    // Refresh labels after generation
+                    $existingLabels = $repository->getLabelsForOrder($orderId);
+                } catch (Exception $e) {
+                    $generationErrors[] = $this->trans(
+                        'Order #%id%: %error%',
+                        ['%id%' => $orderId, '%error%' => $e->getMessage()],
+                        'Modules.Extrashippinglabels.Admin'
+                    );
+                }
+            }
+
+            // Collect PDF files from labels
+            foreach ($existingLabels as $label) {
+                if (!empty($label['label_filepath'])) {
+                    $filepath = $repository->getSecureLabelFilepath($label['label_filepath']);
+                    if ($filepath && file_exists($filepath)) {
+                        $pdfFiles[] = $filepath;
+                    }
+                }
+            }
+        }
+
+        if (!empty($generationErrors)) {
+            foreach ($generationErrors as $error) {
+                $this->addFlash('error', $error);
+            }
+        }
+
+        if (empty($pdfFiles)) {
+            $this->addFlash('error', $this->trans('No labels found for the selected orders.', [], 'Modules.Extrashippinglabels.Admin'));
+            return $this->redirectToRoute('admin_orders_index');
+        }
+
+        try {
+            $filename = 'shipping_labels_' . date('Y-m-d_His') . '.pdf';
+            $response = new Response($this->mergePdfFiles($pdfFiles));
+            $response->headers->set('Content-Type', 'application/pdf');
+            $response->headers->set('Content-Disposition', 'attachment; filename="' . $filename . '"');
+            return $response;
+        } catch (Exception $e) {
+            $this->addFlash('error', $this->trans(
+                'An error occurred while merging PDFs: %error%',
+                ['%error%' => $e->getMessage()],
+                'Modules.Extrashippinglabels.Admin'
+            ));
+            return $this->redirectToRoute('admin_orders_index');
+        }
+    }
+
     /**
      * @return string Merged PDF content
      * @throws Exception

@@ -57,3 +57,11 @@ ps_extrashippinglabels_labels_download_bulk:
     _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::downloadBulkAction'
     _legacy_controller: 'AdminOrders' # Keep the context on the Orders page
     _legacy_link: 'AdminOrders'
+
+ps_extrashippinglabels_labels_print_bulk:
+  path: /extrashippinglabels/labels/print-bulk
+  methods: [POST]
+  defaults:
+    _controller: 'PrestaShop\Module\ExtraShippingLabels\Controller\Admin\ShippingLabelController::printBulkAction'
+    _legacy_controller: 'AdminOrders'
+    _legacy_link: 'AdminOrders'

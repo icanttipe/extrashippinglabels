@@ -44,6 +44,7 @@ class extrashippinglabels extends Module
             $this->registerHook('displayAdminOrderTabContent') &&
             $this->registerHook('actionOrderGridDefinitionModifier') &&
             $this->registerHook('actionOrderGenerateShippingLabel') &&
+            $this->registerHook('displayBackOfficeFooter') &&
             $this->installTab();
     }
 
@@ -218,6 +219,16 @@ class extrashippinglabels extends Module
                     ->setOptions([
                         'submit_route' => 'ps_extrashippinglabels_labels_download_bulk',
                     ])
+            )
+            ->add(
+                (new PrestaShop\PrestaShop\Core\Grid\Action\Bulk\Type\ButtonBulkAction('print_extra_shipping_labels'))
+                    ->setName($this->l('Print shipping labels'))
+                    ->setOptions([
+                        'class' => 'js-print-shipping-labels-bulk-action',
+                        'attributes' => [
+                            'data-print-url' => $this->get('router')->generate('ps_extrashippinglabels_labels_print_bulk'),
+                        ],
+                    ])
             );
     }
 
@@ -231,5 +242,46 @@ class extrashippinglabels extends Module
     {
         // This is a custom hook, other modules should implement their logic here.
         // The module triggering this hook doesn't need to do anything.
+    }
+
+    /**
+     * Hook to inject the print modal and JavaScript on the orders list page.
+     *
+     * @param array $params
+     * @return string
+     */
+    public function hookDisplayBackOfficeFooter(array $params)
+    {
+        // Only display on orders list page
+        $controller = Tools::getValue('controller');
+
+        // Get current route from request stack
+        $route = null;
+        try {
+            $requestStack = $this->get('request_stack');
+            $currentRequest = $requestStack->getCurrentRequest();
+            if ($currentRequest) {
+                $route = $currentRequest->attributes->get('_route');
+            }
+        } catch (\Exception $e) {
+            // Service not available
+        }
+
+        if ($controller !== 'AdminOrders' && $route !== 'admin_orders_index') {
+            return '';
+        }
+
+        $router = $this->get('router');
+        $twig = $this->get('twig');
+
+        // Render the modal
+        $modalHtml = $twig->render('@Modules/extrashippinglabels/views/templates/admin/print_modal.html.twig', [
+            'print_url' => $router->generate('ps_extrashippinglabels_labels_print_bulk'),
+        ]);
+
+        // Add JavaScript
+        $jsPath = $this->getPathUri() . 'views/js/print_shipping_labels.js';
+
+        return $modalHtml . '<script src="' . $jsPath . '"></script>';
     }
 }
