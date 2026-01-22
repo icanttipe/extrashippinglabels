@@ -215,7 +215,16 @@ class ShippingLabelController extends PrestaShopAdminController
         $orderIds = $request->request->all('order_ids');
         $printMode = $request->request->get('print_mode', self::PRINT_MODE_MISSING_ONLY);
 
+        // Check if AJAX request
+        $isAjax = $request->isXmlHttpRequest();
+
         if (empty($orderIds)) {
+            if ($isAjax) {
+                return $this->json([
+                    'success' => false,
+                    'errors' => [$this->trans('You must select at least one order.', [], 'Modules.Extrashippinglabels.Admin')],
+                ]);
+            }
             $this->addFlash('error', $this->trans('You must select at least one order.', [], 'Modules.Extrashippinglabels.Admin'));
             return $this->redirectToRoute('admin_orders_index');
         }
@@ -267,10 +276,38 @@ class ShippingLabelController extends PrestaShopAdminController
             }
         }
 
+        // AJAX response
+        if ($isAjax) {
+            $response = [
+                'success' => empty($generationErrors),
+                'errors' => $generationErrors,
+                'labelsCount' => count($pdfFiles),
+            ];
+
+            if (!empty($pdfFiles)) {
+                try {
+                    $pdfContent = $this->mergePdfFiles($pdfFiles);
+                    $response['pdf'] = base64_encode($pdfContent);
+                    $response['filename'] = 'shipping_labels_' . date('Y-m-d_His') . '.pdf';
+                } catch (Exception $e) {
+                    $response['success'] = false;
+                    $response['errors'][] = $this->trans(
+                        'An error occurred while merging PDFs: %error%',
+                        ['%error%' => $e->getMessage()],
+                        'Modules.Extrashippinglabels.Admin'
+                    );
+                }
+            }
+
+            return $this->json($response);
+        }
+
+        // Non-AJAX fallback
         if (!empty($generationErrors)) {
             foreach ($generationErrors as $error) {
                 $this->addFlash('error', $error);
             }
+            return $this->redirectToRoute('admin_orders_index');
         }
 
         if (empty($pdfFiles)) {
