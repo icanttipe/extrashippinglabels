@@ -235,6 +235,13 @@ class ShippingLabelController extends PrestaShopAdminController
                 default => false,
             };
 
+            // Delete existing labels before regenerating
+            if ($printMode === self::PRINT_MODE_REGENERATE_ALL && $hasExistingLabels) {
+                foreach ($existingLabels as $label) {
+                    $repository->deleteLabel((int) $label['id_shipping_label']);
+                }
+            }
+
             if ($shouldGenerate) {
                 try {
                     Hook::exec('actionOrderGenerateShippingLabel', ['id_order' => $orderId]);
