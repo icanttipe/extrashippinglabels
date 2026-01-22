@@ -179,11 +179,25 @@ class ShippingLabelController extends PrestaShopAdminController
         if (!empty($orderIds)) {
             $generatedCount = 0;
             foreach ($orderIds as $orderId) {
-                Hook::exec('actionOrderGenerateShippingLabel', ['id_order' => (int)$orderId]);
-                $generatedCount++;
+                try {
+                    Hook::exec('actionOrderGenerateShippingLabel', ['id_order' => (int)$orderId]);
+                    $generatedCount++;
+                } catch (Exception $e) {
+                    $this->addFlash('error', $this->trans(
+                        'Error generating label for order #%id%: %error%',
+                        ['%id%' => $orderId, '%error%' => $e->getMessage()],
+                        'Modules.Extrashippinglabels.Admin'
+                    ));
+                }
             }
 
-            $this->addFlash('success', $this->trans('Hook for generating labels triggered for %d selected orders.', ['%d' => $generatedCount], 'Modules.Extrashippinglabels.Admin'));
+            if ($generatedCount > 0) {
+                $this->addFlash('success', $this->trans(
+                    'Labels generated for %count% order(s).',
+                    ['%count%' => $generatedCount],
+                    'Modules.Extrashippinglabels.Admin'
+                ));
+            }
         } else {
             $this->addFlash('error', $this->trans('You must select at least one order.', [], 'Modules.Extrashippinglabels.Admin'));
         }
